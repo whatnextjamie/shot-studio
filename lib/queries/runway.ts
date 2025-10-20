@@ -1,5 +1,4 @@
 // Example React Query hooks for Runway API
-// You'll implement these when integrating Runway in Weekend 2
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Shot } from '@/types/storyboard';
@@ -15,11 +14,12 @@ export function useRunwayTaskStatus(taskId: string | undefined) {
       if (!response.ok) throw new Error('Failed to fetch task status');
       return response.json();
     },
+    // commented out polling for now to eliminate errors
     enabled: !!taskId, // Only run if taskId exists
-    refetchInterval: (data) => {
-      // Poll every 3 seconds while task is pending
-      return data?.status === 'PENDING' ? 3000 : false;
-    },
+    // refetchInterval: (data) => {
+    //   // Poll every 3 seconds while task is pending
+    //   return data?.status === 'PENDING' ? 3000 : false;
+    // },
   });
 }
 
