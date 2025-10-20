@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { parseStoryboardFromMessage, updateTiming } from './storyboard-parser';
+import { parseStoryboardFromMessage, updateTiming } from './parser';
 import type { Shot } from '@/types/storyboard';
 
 describe('parseStoryboardFromMessage', () => {

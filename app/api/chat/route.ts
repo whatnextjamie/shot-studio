@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import { STORYBOARD_SYSTEM_PROMPT } from '@/lib/prompts';
+import { STORYBOARD_SYSTEM_PROMPT } from '@/lib/ai/prompts';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!,
