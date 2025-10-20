@@ -10,6 +10,7 @@ import { MessageSquare, Trash2 } from 'lucide-react';
 export default function ChatPanel() {
   const messages = useStoryboardStore((state) => state.messages);
   const addMessage = useStoryboardStore((state) => state.addMessage);
+  const updateMessage = useStoryboardStore((state) => state.updateMessage);
   const clearMessages = useStoryboardStore((state) => state.clearMessages);
   const isGenerating = useStoryboardStore((state) => state.isGenerating);
   const setIsGenerating = useStoryboardStore((state) => state.setIsGenerating);
@@ -24,6 +25,12 @@ export default function ChatPanel() {
   const handleSendMessage = async (content: string) => {
     // Add user message
     addMessage({ role: 'user', content });
+
+    // Create empty assistant message for live streaming
+    const assistantMessageId = addMessage({
+      role: 'assistant',
+      content: '',
+    });
 
     // Set generating state
     setIsGenerating(true);
@@ -42,7 +49,7 @@ export default function ChatPanel() {
         throw new Error('Failed to get response');
       }
 
-      // Handle streaming response
+      // Handle streaming response with live updates
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantMessage = '';
@@ -59,17 +66,15 @@ export default function ChatPanel() {
             if (line.startsWith('0:')) {
               const content = line.slice(2);
               assistantMessage += content;
+              // Update message in real-time
+              updateMessage(assistantMessageId, { content: assistantMessage });
             }
           }
         }
       }
-
-      // Add complete assistant message
-      addMessage({ role: 'assistant', content: assistantMessage });
     } catch (error) {
       console.error('Error:', error);
-      addMessage({
-        role: 'assistant',
+      updateMessage(assistantMessageId, {
         content: 'Sorry, I encountered an error. Please try again.',
       });
     } finally {
@@ -110,10 +115,14 @@ export default function ChatPanel() {
           </div>
         ) : (
           <>
-            {messages.map((message) => (
-              <ChatMessage key={message.id} message={message} />
-            ))}
-            {isGenerating && <TypingIndicator />}
+            {messages
+              .filter((message) => message.content !== '')
+              .map((message) => (
+                <ChatMessage key={message.id} message={message} />
+              ))}
+            {isGenerating && messages[messages.length - 1]?.content === '' && (
+              <TypingIndicator />
+            )}
             <div ref={messagesEndRef} />
           </>
         )}

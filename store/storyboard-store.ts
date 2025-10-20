@@ -5,7 +5,8 @@ import type { Shot, Storyboard, Message } from '@/types/storyboard';
 interface StoryboardStore {
   // Messages
   messages: Message[];
-  addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => void;
+  addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => string;
+  updateMessage: (id: string, updates: Partial<Message>) => void;
   clearMessages: () => void;
 
   // Storyboard
@@ -27,16 +28,25 @@ export const useStoryboardStore = create<StoryboardStore>()(
   devtools((set) => ({
   // Messages
   messages: [],
-  addMessage: (message) =>
+  addMessage: (message) => {
+    const id = crypto.randomUUID();
     set((state) => ({
       messages: [
         ...state.messages,
         {
           ...message,
-          id: crypto.randomUUID(),
+          id,
           timestamp: new Date(),
         },
       ],
+    }));
+    return id;
+  },
+  updateMessage: (id, updates) =>
+    set((state) => ({
+      messages: state.messages.map((msg) =>
+        msg.id === id ? { ...msg, ...updates } : msg
+      ),
     })),
   clearMessages: () => set({ messages: [] }),
 
