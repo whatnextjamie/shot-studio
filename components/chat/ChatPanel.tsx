@@ -1,7 +1,11 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import { useStoryboardStore } from '@/store/storyboard-store';
-import { useState } from 'react';
+import { ChatMessage } from './ChatMessage';
+import ChatInput from './ChatInput';
+import TypingIndicator from './TypingIndicator';
+import { MessageSquare, Trash2 } from 'lucide-react';
 
 export default function ChatPanel() {
   const messages = useStoryboardStore((state) => state.messages);
@@ -10,105 +14,113 @@ export default function ChatPanel() {
   const isGenerating = useStoryboardStore((state) => state.isGenerating);
   const setIsGenerating = useStoryboardStore((state) => state.setIsGenerating);
 
-  const [input, setInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  // Auto-scroll to bottom
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
+  const handleSendMessage = async (content: string) => {
     // Add user message
-    addMessage({
-      role: 'user',
-      content: input.trim(),
-    });
+    addMessage({ role: 'user', content });
 
-    // Simulate assistant response
+    // Set generating state
     setIsGenerating(true);
-    setTimeout(() => {
+
+    try {
+      // Call API
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [...messages, { role: 'user', content }],
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response');
+      }
+
+      // Handle streaming response
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('0:')) {
+              const content = line.slice(2);
+              assistantMessage += content;
+            }
+          }
+        }
+      }
+
+      // Add complete assistant message
+      addMessage({ role: 'assistant', content: assistantMessage });
+    } catch (error) {
+      console.error('Error:', error);
       addMessage({
         role: 'assistant',
-        content: 'Store is working! Your message was received.',
+        content: 'Sorry, I encountered an error. Please try again.',
       });
+    } finally {
       setIsGenerating(false);
-    }, 1000);
-
-    setInput('');
+    }
   };
 
   return (
     <div className="h-full flex flex-col bg-gray-900">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-800">
-        <h2 className="text-xl font-semibold">Chat</h2>
-        <button
-          onClick={clearMessages}
-          className="text-sm px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded transition-colors"
-        >
-          Clear
-        </button>
+        <div className="flex items-center gap-2">
+          <MessageSquare className="text-blue-500" size={24} />
+          <h2 className="text-xl">Storyboard Assistant</h2>
+        </div>
+        {messages.length > 0 && (
+          <button
+            onClick={clearMessages}
+            className="text-gray-400 hover:text-red-400 transition-colors"
+            title="Clear chat"
+          >
+            <Trash2 size={20} />
+          </button>
+        )}
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
-          <div className="text-center text-gray-500 mt-8">
-            <p className="mb-2">No messages yet</p>
-            <p className="text-sm">Send a message to test the Zustand store</p>
+          <div className="h-full flex items-center justify-center text-gray-500 text-center p-8">
+            <div>
+              <MessageSquare size={48} className="mx-auto mb-4 opacity-50" />
+              <h3 className="text-lg font-medium mb-2">Start Planning Your Video</h3>
+              <p className="text-sm">
+                Describe your video idea and I'll help you create a professional storyboard.
+              </p>
+            </div>
           </div>
         ) : (
-          messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex ${
-                message.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
-            >
-              <div
-                className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                  message.role === 'user'
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-gray-800 text-gray-100'
-                }`}
-              >
-                <p className="text-sm">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {new Date(message.timestamp).toLocaleTimeString()}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
-        {isGenerating && (
-          <div className="flex justify-start">
-            <div className="bg-gray-800 rounded-lg px-4 py-2">
-              <p className="text-sm text-gray-400">Typing...</p>
-            </div>
-          </div>
+          <>
+            {messages.map((message) => (
+              <ChatMessage key={message.id} message={message} />
+            ))}
+            {isGenerating && <TypingIndicator />}
+            <div ref={messagesEndRef} />
+          </>
         )}
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} className="p-4 border-t border-gray-800">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Test the store..."
-            className="flex-1 px-4 py-2 bg-gray-800 text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="submit"
-            disabled={!input.trim() || isGenerating}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg transition-colors"
-          >
-            Send
-          </button>
-        </div>
-        <p className="text-xs text-gray-500 mt-2">
-          Messages: {messages.length} (stored in Zustand)
-        </p>
-      </form>
+      <ChatInput onSend={handleSendMessage} disabled={isGenerating} />
     </div>
   );
 }
