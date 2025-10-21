@@ -2,14 +2,26 @@ import type { Storyboard, Shot } from '@/types/storyboard';
 
 export function parseStoryboardFromMessage(content: string): Storyboard | null {
   try {
-    // Look for JSON block in the message
-    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
-                      content.match(/\{[\s\S]*"shots"[\s\S]*\}/);
-    
-    if (!jsonMatch) return null;
+    // Look for JSON block in the message - try multiple patterns
+    let jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);  // Try code block first
+
+    if (!jsonMatch) {
+      // Try to find raw JSON object
+      jsonMatch = content.match(/\{[\s\S]*?"shots"\s*:\s*\[[\s\S]*?\]\s*[\s\S]*?\}/);
+    }
+
+    if (!jsonMatch) {
+      return null;
+    }
 
     const jsonStr = jsonMatch[1] || jsonMatch[0];
-    const data = JSON.parse(jsonStr);
+
+    let data;
+    try {
+      data = JSON.parse(jsonStr);
+    } catch (parseError) {
+      throw parseError; // Re-throw to be caught by outer try-catch
+    }
 
     // Validate required fields
     if (!data.shots || !Array.isArray(data.shots)) {

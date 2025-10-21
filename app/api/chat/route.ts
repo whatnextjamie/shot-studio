@@ -27,7 +27,21 @@ export async function POST(req: Request) {
         for await (const chunk of stream) {
           if (chunk.type === 'content_block_delta') {
             const text = chunk.delta.type === 'text_delta' ? chunk.delta.text : '';
-            controller.enqueue(encoder.encode(`0:${text}\n`));
+
+            // Split text by newlines and prefix each line with 0:
+            // This ensures multi-line chunks are properly formatted
+            const lines = text.split('\n');
+            for (let i = 0; i < lines.length; i++) {
+              // Add 0: prefix to each line
+              // For all lines except the last, add \n after
+              const line = lines[i];
+              if (i < lines.length - 1) {
+                controller.enqueue(encoder.encode(`0:${line}\n`));
+              } else {
+                // Last line: only add \n if the original text ended with \n
+                controller.enqueue(encoder.encode(`0:${line}\n`));
+              }
+            }
           }
         }
         controller.close();

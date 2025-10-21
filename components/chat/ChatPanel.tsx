@@ -53,14 +53,24 @@ export default function ChatPanel() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let assistantMessage = '';
+      let buffer = ''; // Buffer for incomplete lines
 
       if (reader) {
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            break;
+          }
 
-          const chunk = decoder.decode(value);
-          const lines = chunk.split('\n');
+          // Use { stream: true } to handle multi-byte characters across chunks
+          const chunk = decoder.decode(value, { stream: true });
+
+          buffer += chunk;
+
+          // Process complete lines (ending with \n)
+          const lines = buffer.split('\n');
+          // Keep the last incomplete line in buffer
+          buffer = lines.pop() || '';
 
           for (const line of lines) {
             if (line.startsWith('0:')) {
@@ -70,6 +80,13 @@ export default function ChatPanel() {
               updateMessage(assistantMessageId, { content: assistantMessage });
             }
           }
+        }
+
+        // Process any remaining buffered content
+        if (buffer.startsWith('0:')) {
+          const content = buffer.slice(2);
+          assistantMessage += content;
+          updateMessage(assistantMessageId, { content: assistantMessage });
         }
       }
     } catch (error) {
