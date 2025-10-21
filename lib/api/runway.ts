@@ -1,59 +1,90 @@
-// Example React Query hooks for Runway API
+// Runway API Client Implementation
+// Uses verified types from types/runway.ts (verified against official API docs)
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { Shot } from '@/types/storyboard';
+import type { RunwayGenerateRequest, RunwayGenerateResponse } from '@/types/runway';
 
-// Example: Query to check Runway task status
-export function useRunwayTaskStatus(taskId: string | undefined) {
-  return useQuery({
-    queryKey: ['runway-task', taskId],
-    queryFn: async () => {
-      if (!taskId) throw new Error('No task ID');
+const RUNWAY_API_BASE = 'https://api.runwayml.com/v1';
 
-      const response = await fetch(`/api/runway/status/${taskId}`);
-      if (!response.ok) throw new Error('Failed to fetch task status');
-      return response.json();
-    },
-    // commented out polling for now to eliminate errors
-    enabled: !!taskId, // Only run if taskId exists
-    // refetchInterval: (data) => {
-    //   // Poll every 3 seconds while task is pending
-    //   return data?.status === 'PENDING' ? 3000 : false;
-    // },
-  });
+export class RunwayClient {
+  private apiKey: string;
+  private apiSecret: string;
+
+  constructor(apiKey: string, apiSecret: string) {
+    this.apiKey = apiKey;
+    this.apiSecret = apiSecret;
+  }
+
+  private async request(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<Response> {
+    const url = `${RUNWAY_API_BASE}${endpoint}`;
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${this.apiKey}`,
+      'X-Runway-Secret': this.apiSecret,
+      ...options.headers,
+    };
+
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Runway API error: ${response.status} - ${error}`);
+    }
+
+    return response;
+  }
+
+  async generate(params: RunwayGenerateRequest): Promise<RunwayGenerateResponse> {
+    const response = await this.request('/generations', {
+      method: 'POST',
+      body: JSON.stringify({
+        promptText: params.prompt,
+        duration: params.duration || 5,
+        ratio: params.ratio || '16:9',
+        watermark: params.watermark,
+        image_url: params.image_url,
+        seed: params.seed,
+      }),
+    });
+
+    return response.json();
+  }
+
+  async getStatus(taskId: string): Promise<RunwayGenerateResponse> {
+    const response = await this.request(`/generations/${taskId}`, {
+      method: 'GET',
+    });
+
+    return response.json();
+  }
+
+  async cancel(taskId: string): Promise<void> {
+    await this.request(`/generations/${taskId}`, {
+      method: 'DELETE',
+    });
+  }
 }
 
-// Example: Mutation to generate video for a shot
-export function useGenerateVideo() {
-  const queryClient = useQueryClient();
+// Singleton instance
+let runwayClient: RunwayClient | null = null;
 
-  return useMutation({
-    mutationFn: async (shot: Shot) => {
-      const response = await fetch('/api/runway/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          prompt: shot.runwayPrompt,
-          duration: shot.duration,
-        }),
-      });
+export function getRunwayClient(): RunwayClient {
+  if (!runwayClient) {
+    const apiKey = process.env.RUNWAY_API_KEY;
+    const apiSecret = process.env.RUNWAY_API_SECRET;
 
-      if (!response.ok) throw new Error('Failed to generate video');
-      return response.json();
-    },
-    onSuccess: (data, shot) => {
-      // Invalidate and refetch related queries
-      queryClient.invalidateQueries({ queryKey: ['runway-task', data.taskId] });
+    if (!apiKey || !apiSecret) {
+      throw new Error('Runway API credentials not configured');
+    }
 
-      console.log('Video generation started for shot:', shot.id);
-    },
-    onError: (error) => {
-      console.error('Error generating video:', error);
-    },
-  });
+    runwayClient = new RunwayClient(apiKey, apiSecret);
+  }
+
+  return runwayClient;
 }
-
-// Example usage:
-// const { data, isLoading } = useRunwayTaskStatus(shot.runwayTaskId);
-// const generateVideo = useGenerateVideo();
-// generateVideo.mutate(shot);

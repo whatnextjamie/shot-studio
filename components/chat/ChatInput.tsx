@@ -36,7 +36,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="p-4 border-t border-gray-800">
+    <form onSubmit={handleSubmit} className="p-4 border-t border-gray-900">
       <div className="flex flex-col gap-2">
         <div className="flex gap-2">
           <textarea
@@ -49,12 +49,12 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
             placeholder="Describe your video idea..."
             disabled={disabled}
             rows={1}
-            className="flex-1 bg-gray-800 text-gray-100 rounded-lg px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 max-h-32"
+            className="flex-1 bg-gray-800 text-gray-100 rounded-sm px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-gray-700 disabled:opacity-50 max-h-32"
           />
           <button
             type="submit"
             disabled={disabled || !input.trim()}
-            className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-700 disabled:cursor-not-allowed text-white rounded-lg px-4 py-3 transition-colors self-end"
+            className="bg-gray-800 hover:bg-gray-600 disabled:cursor-not-allowed text-white rounded-sm px-4 py-3 transition-colors self-end"
           >
             <Send size={20} />
           </button>

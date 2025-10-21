@@ -58,8 +58,8 @@ export default function Home() {
           <PanelResizeHandle
             className={
               isMobile
-                ? 'h-2 bg-gray-800 hover:bg-blue-500 transition-colors'
-                : 'w-2 bg-gray-800 hover:bg-blue-500 transition-colors'
+                ? 'h-2 bg-gray-900 hover:bg-gray-700 transition-colors'
+                : 'w-2 bg-gray-900 hover:bg-gray-700 transition-colors'
             }
           />
 

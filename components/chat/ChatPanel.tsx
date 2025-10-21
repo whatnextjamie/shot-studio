@@ -100,11 +100,11 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-900">
+    <div className="h-full flex flex-col bg-gray-950">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-800">
+      <div className="flex items-center justify-between p-4 border-b border-gray-900">
         <div className="flex items-center gap-2">
-          <MessageSquare className="text-blue-500" size={24} />
+          <MessageSquare className="text-gray-400" size={24} />
           <h2 className="text-xl">Storyboard Assistant</h2>
         </div>
         {messages.length > 0 && (
