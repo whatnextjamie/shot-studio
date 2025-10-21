@@ -10,6 +10,17 @@ interface ChatMessageProps {
 export const ChatMessage = memo(function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
 
+  // Remove JSON code blocks from assistant messages
+  // Handle both complete blocks (with closing ```) and incomplete blocks (during streaming)
+  const displayContent = message.role === 'assistant'
+    ? message.content
+        .replace(/```json[\s\S]*?```/g, '')  // Remove complete JSON blocks
+        .replace(/```json[\s\S]*$/g, '')      // Remove incomplete JSON blocks (streaming)
+    : message.content;
+
+  // Check if message has storyboard JSON
+  const hasStoryboard = message.role === 'assistant' && /```json[\s\S]*?"shots"[\s\S]*?```/.test(message.content);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -31,7 +42,13 @@ export const ChatMessage = memo(function ChatMessage({ message }: ChatMessagePro
           {isUser ? 'You' : 'AI Assistant'}
         </div>
         <div className="text-gray-100 whitespace-pre-wrap break-words">
-          {message.content}
+          {displayContent}
+          {hasStoryboard && (
+            <div className="mt-2 text-xs text-green-400 flex items-center gap-1">
+              <span>✓</span>
+              <span>Storyboard generated on canvas</span>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
