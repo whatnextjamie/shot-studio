@@ -1,16 +1,15 @@
 // Runway API Client Implementation
-// Uses verified types from types/runway.ts (verified against official API docs)
+// Uses verified types from types/runway.ts
 
 import type { RunwayGenerateRequest, RunwayGenerateResponse } from '@/types/runway';
 
-const RUNWAY_API_BASE = 'https://api.runwayml.com/v1';
+// Runway public API endpoint (not api.runwayml.com)
+const RUNWAY_API_BASE = 'https://api.dev.runwayml.com/v1';
 
 export class RunwayClient {
-  private apiKey: string;
   private apiSecret: string;
 
-  constructor(apiKey: string, apiSecret: string) {
-    this.apiKey = apiKey;
+  constructor(apiSecret: string) {
     this.apiSecret = apiSecret;
   }
 
@@ -22,8 +21,8 @@ export class RunwayClient {
 
     const headers = {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.apiKey}`,
-      'X-Runway-Secret': this.apiSecret,
+      'Authorization': `Bearer ${this.apiSecret}`,
+      'X-Runway-Version': '2024-11-06', // API version header required by Runway
       ...options.headers,
     };
 
@@ -41,14 +40,24 @@ export class RunwayClient {
   }
 
   async generate(params: RunwayGenerateRequest): Promise<RunwayGenerateResponse> {
-    const response = await this.request('/generations', {
+    // Map aspect ratio to Runway's text-to-video pixel format
+    // Text-to-video only supports: 1280:720, 720:1280, 1080:1920, 1920:1080
+    const ratioMap: Record<string, string> = {
+      '16:9': '1920:1080',   // Widescreen
+      '9:16': '1080:1920',   // Vertical
+      '4:3': '1280:720',     // Closest match
+      '3:4': '720:1280',     // Closest match
+      '1:1': '1280:720',     // Closest match (no square option)
+      '21:9': '1920:1080',   // Closest match (no ultrawide)
+    };
+
+    const ratio = params.ratio ? (ratioMap[params.ratio] || '1920:1080') : '1920:1080';
+
+    const response = await this.request('/text_to_video', {
       method: 'POST',
       body: JSON.stringify({
+        model: 'veo3.1_fast', // Fast text-to-video model
         promptText: params.prompt,
-        duration: params.duration || 5,
-        ratio: params.ratio || '16:9',
-        watermark: params.watermark,
-        image_url: params.image_url,
         seed: params.seed,
       }),
     });
@@ -57,7 +66,7 @@ export class RunwayClient {
   }
 
   async getStatus(taskId: string): Promise<RunwayGenerateResponse> {
-    const response = await this.request(`/generations/${taskId}`, {
+    const response = await this.request(`/tasks/${taskId}`, {
       method: 'GET',
     });
 
@@ -65,7 +74,7 @@ export class RunwayClient {
   }
 
   async cancel(taskId: string): Promise<void> {
-    await this.request(`/generations/${taskId}`, {
+    await this.request(`/tasks/${taskId}`, {
       method: 'DELETE',
     });
   }
@@ -76,14 +85,14 @@ let runwayClient: RunwayClient | null = null;
 
 export function getRunwayClient(): RunwayClient {
   if (!runwayClient) {
-    const apiKey = process.env.RUNWAY_API_KEY;
-    const apiSecret = process.env.RUNWAY_API_SECRET;
+    // Runway provides a single API secret for Bearer token authentication
+    const apiSecret = process.env.RUNWAYML_API_SECRET;
 
-    if (!apiKey || !apiSecret) {
+    if (!apiSecret) {
       throw new Error('Runway API credentials not configured');
     }
 
-    runwayClient = new RunwayClient(apiKey, apiSecret);
+    runwayClient = new RunwayClient(apiSecret);
   }
 
   return runwayClient;

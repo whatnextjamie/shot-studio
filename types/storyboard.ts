@@ -12,7 +12,7 @@ export interface Shot {
   mood?: string;
   notes?: string;
   runwayTaskId?: string;
-  runwayStatus?: 'PENDING' | 'SUCCEEDED' | 'FAILED'; // Matches Runway API status
+  runwayStatus?: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'THROTTLED'; // Matches Runway API status
   progressRatio?: number; // 0.0 to 1.0
   progressText?: string; // Status message from Runway
   videoUrl?: string;

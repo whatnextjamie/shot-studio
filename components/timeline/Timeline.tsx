@@ -13,7 +13,7 @@ export default function Timeline() {
 
   if (!storyboard) {
     return (
-      <div className="h-32 md:h-40 flex items-center justify-center border-t border-gray-800">
+      <div className="h-full flex items-center justify-center border-t border-gray-800">
         <div className="text-gray-500 text-sm">No timeline to display</div>
       </div>
     );
@@ -37,7 +37,7 @@ export default function Timeline() {
   };
 
   return (
-    <div className="h-32 md:h-40 border-t border-gray-800 p-4">
+    <div className="border-t border-gray-800 p-4">
       <div className="flex items-center gap-2 mb-3">
         <Clock size={18} className="text-gray-400" />
         <h3 className="font-medium">Timeline</h3>

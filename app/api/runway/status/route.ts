@@ -21,10 +21,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       taskId: response.id || response.taskId,
       status: response.status,
-      progress: response.progressRatio,
+      progress: response.progress || response.progressRatio,
       progressText: response.progressText,
       videoUrl: response.artifacts?.[0]?.url || response.output?.[0],
-      error: response.error,
+      error: response.error || response.failure,
       estimatedTimeToStartSeconds: response.estimatedTimeToStartSeconds,
     });
   } catch (error) {
