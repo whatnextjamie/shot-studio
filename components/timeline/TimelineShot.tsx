@@ -27,8 +27,8 @@ export default function TimelineShot({ shot }: TimelineShotProps) {
       ref={setNodeRef}
       style={style}
       className={`
-        flex-shrink-0 w-32 bg-gray-800 rounded-lg p-2 cursor-move
-        ${isDragging ? 'opacity-50 ring-2 ring-blue-500' : ''}
+        flex-shrink w-32 bg-gray-900 rounded-sm p-2 cursor-move
+        ${isDragging ? 'opacity-50 ring-2 ring-gray-500' : ''}
       `}
       {...attributes}
       {...listeners}

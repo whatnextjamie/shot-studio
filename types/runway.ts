@@ -14,14 +14,17 @@ export interface RunwayGenerateRequest {
 export interface RunwayGenerateResponse {
   id: string;
   taskId?: string; // Alternative task identifier
-  status: 'PENDING' | 'SUCCEEDED' | 'FAILED';
+  status: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'CANCELLED' | 'THROTTLED';
   createdAt: string; // ISO 8601 timestamp
   updatedAt?: string; // ISO 8601 timestamp
-  progressRatio?: number; // 0.0 to 1.0
+  progress?: number; // 0.0 to 1.0 - used during RUNNING status
+  progressRatio?: number; // Alternative progress field
   progressText?: string;
   estimatedTimeToStartSeconds?: number;
   artifacts?: Array<{ url: string }>; // Primary output location when SUCCEEDED
   output?: string[]; // Alternative output URLs
+  failure?: string; // Error message when FAILED
+  failureCode?: string;
   error?: string;
 }
 

@@ -38,8 +38,8 @@ export default function Home() {
   };
 
   return (
-    <main className="h-screen w-screen bg-gray-950 text-gray-100 flex flex-col">
-      <div className="flex-1">
+    <main className="h-screen w-screen bg-gray-950 text-gray-100">
+      <div className="panel-group-container overflow-auto">
         <PanelGroup direction={isMobile ? 'vertical' : 'horizontal'}>
           {/* Chat Panel */}
           <Panel
@@ -100,8 +100,9 @@ export default function Home() {
           </Panel>
         </PanelGroup>
       </div>
-      {/* Timeline (Fixed at bottom) */}
-      <Timeline />
+      <div className="timeline-container">
+        <Timeline />
+      </div>
     </main>
   );
 }
