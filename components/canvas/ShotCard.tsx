@@ -33,6 +33,16 @@ export default function ShotCard({ shot, isSelected, onClick }: ShotCardProps) {
       exit={{ opacity: 0, scale: 0.9 }}
       whileHover={{ scale: 1.02 }}
       onClick={onClick}
+      role="button"
+      tabIndex={0}
+      aria-label={`Shot ${shot.number}: ${shot.description}`}
+      aria-pressed={isSelected}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
       className={`
         bg-gray-800 rounded-xl p-4 cursor-pointer transition-all border-2
         ${isSelected ? 'border-blue-500 ring-2 ring-blue-500/50' : 'border-gray-700 hover:border-gray-600'}
@@ -138,16 +148,18 @@ export default function ShotCard({ shot, isSelected, onClick }: ShotCardProps) {
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
+            aria-label={`Generate video for shot ${shot.number}`}
+            aria-busy={isGenerating}
             className="flex-1 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-700 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
           >
             {isGenerating ? (
               <>
-                <Loader2 size={16} className="animate-spin" />
+                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 Generating
               </>
             ) : (
               <>
-                <Play size={16} />
+                <Play size={16} aria-hidden="true" />
                 Generate
               </>
             )}
@@ -159,9 +171,10 @@ export default function ShotCard({ shot, isSelected, onClick }: ShotCardProps) {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleViewVideo}
+            aria-label={`View generated video for shot ${shot.number}`}
             className="flex-1 bg-green-500 hover:bg-green-600 text-white rounded-lg px-4 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-colors"
           >
-            <Video size={16} />
+            <Video size={16} aria-hidden="true" />
             View Video
           </motion.button>
         )}

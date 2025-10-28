@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useStoryboardStore } from '@/store/storyboard-store';
+import { RUNWAY_CONFIG } from '@/lib/constants';
 
 interface RunwayStatusResponse {
   taskId: string;
@@ -14,9 +15,29 @@ interface RunwayStatusResponse {
 
 /**
  * Hook for managing Runway video generation with React Query
- * - Uses useMutation for starting generation
- * - Uses useQuery with automatic polling for status updates
- * - Automatically syncs status to Zustand store
+ * Handles video generation lifecycle including starting, polling, and syncing to the store
+ *
+ * @param shotId - ID of the shot to generate video for
+ * @returns Object with generation controls and state
+ * @property {Function} generate - Function to start video generation with a prompt
+ * @property {boolean} isGenerating - Whether generation is in progress
+ * @property {number} progressRatio - Generation progress (0-1)
+ * @property {string | undefined} progressText - Human-readable progress text
+ * @property {string | null} error - Error message if generation failed
+ * @property {Function} cancel - Function to cancel ongoing generation
+ *
+ * @example
+ * ```typescript
+ * const { generate, isGenerating, progressRatio } = useRunwayGeneration('shot-123');
+ *
+ * // Start generation
+ * generate('A beautiful sunset over mountains');
+ *
+ * // Show progress
+ * if (isGenerating) {
+ *   console.log(`Progress: ${Math.round(progressRatio * 100)}%`);
+ * }
+ * ```
  */
 export function useRunwayGeneration(shotId: string) {
   const queryClient = useQueryClient();
@@ -32,7 +53,7 @@ export function useRunwayGeneration(shotId: string) {
     mutationFn: async (prompt: string) => {
       // Veo 3.1 only accepts 4, 6, or 8 second durations
       // Map shot duration to nearest valid value
-      const shotDuration = shot?.duration || 6;
+      const shotDuration = shot?.duration || RUNWAY_CONFIG.DEFAULT_DURATION_SECONDS;
       let duration: 4 | 6 | 8;
       if (shotDuration <= 5) {
         duration = 4;
@@ -48,7 +69,7 @@ export function useRunwayGeneration(shotId: string) {
         body: JSON.stringify({
           prompt,
           duration,
-          ratio: '1280:720', // Runway requires pixel dimensions, not aspect ratio
+          ratio: RUNWAY_CONFIG.DEFAULT_RATIO,
         }),
       });
 
@@ -104,8 +125,8 @@ export function useRunwayGeneration(shotId: string) {
       if (data?.status === 'SUCCEEDED' || data?.status === 'FAILED' || data?.status === 'CANCELLED') {
         return false;
       }
-      // Poll every 3 seconds while pending/running/throttled
-      return 3000;
+      // Poll while pending/running/throttled
+      return RUNWAY_CONFIG.POLLING_INTERVAL_MS;
     },
     retry: 3,
     retryDelay: 1000,

@@ -2,6 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ShotCard from './ShotCard';
 import type { Shot } from '@/types/storyboard';
 
@@ -10,6 +11,9 @@ vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, layout, initial, animate, exit, whileHover, ...props }: any) => (
       <div {...props}>{children}</div>
+    ),
+    button: ({ children, whileHover, whileTap, ...props }: any) => (
+      <button {...props}>{children}</button>
     ),
   },
 }));
@@ -33,9 +37,28 @@ describe('ShotCard', () => {
     onClick: vi.fn(),
   };
 
+  // Create a wrapper with QueryClientProvider for tests
+  const createWrapper = () => {
+    const queryClient = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: false,
+        },
+        mutations: {
+          retry: false,
+        },
+      },
+    });
+    return ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        {children}
+      </QueryClientProvider>
+    );
+  };
+
   describe('Rendering', () => {
     it('should render shot card with basic information', () => {
-      render(<ShotCard {...defaultProps} />);
+      render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('1')).toBeInTheDocument();
       expect(screen.getByText('Shot 1')).toBeInTheDocument();
@@ -45,7 +68,7 @@ describe('ShotCard', () => {
     });
 
     it('should render shot number in header badge', () => {
-      render(<ShotCard {...defaultProps} />);
+      render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       const badge = screen.getByText('1');
       expect(badge).toBeInTheDocument();
@@ -53,13 +76,13 @@ describe('ShotCard', () => {
     });
 
     it('should display duration with clock icon', () => {
-      render(<ShotCard {...defaultProps} />);
+      render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('10s')).toBeInTheDocument();
     });
 
     it('should display camera angle with camera icon', () => {
-      render(<ShotCard {...defaultProps} />);
+      render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('Wide Shot')).toBeInTheDocument();
     });
@@ -71,7 +94,7 @@ describe('ShotCard', () => {
         description: longDescription,
       };
 
-      render(<ShotCard {...defaultProps} shot={shotWithLongDesc} />);
+      render(<ShotCard {...defaultProps} shot={shotWithLongDesc} />, { wrapper: createWrapper() });
 
       const descElement = screen.getByText(longDescription);
       expect(descElement).toHaveClass('line-clamp-2');
@@ -80,7 +103,7 @@ describe('ShotCard', () => {
 
   describe('Selection state', () => {
     it('should apply selected styles when isSelected is true', () => {
-      const { container } = render(<ShotCard {...defaultProps} isSelected={true} />);
+      const { container } = render(<ShotCard {...defaultProps} isSelected={true} />, { wrapper: createWrapper() });
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('border-blue-500');
@@ -89,7 +112,7 @@ describe('ShotCard', () => {
     });
 
     it('should apply unselected styles when isSelected is false', () => {
-      const { container } = render(<ShotCard {...defaultProps} isSelected={false} />);
+      const { container } = render(<ShotCard {...defaultProps} isSelected={false} />, { wrapper: createWrapper() });
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('border-gray-700');
@@ -99,7 +122,7 @@ describe('ShotCard', () => {
 
   describe('Video/Thumbnail display', () => {
     it('should show Film icon placeholder when no video exists', () => {
-      const { container } = render(<ShotCard {...defaultProps} />);
+      const { container } = render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       // Film icon is rendered as SVG, check for the placeholder container
       const placeholder = container.querySelector('.aspect-video');
@@ -109,37 +132,39 @@ describe('ShotCard', () => {
       expect(svg).toBeInTheDocument();
     });
 
-    it('should display video thumbnail when videoUrl is provided', () => {
+    it('should display video when videoUrl is provided', () => {
       const shotWithVideo = {
         ...mockShot,
         videoUrl: 'https://example.com/video.mp4',
-        thumbnailUrl: 'https://example.com/thumbnail.jpg',
       };
 
-      render(<ShotCard {...defaultProps} shot={shotWithVideo} />);
+      const { container } = render(<ShotCard {...defaultProps} shot={shotWithVideo} />, { wrapper: createWrapper() });
 
-      const img = screen.getByAltText('Shot 1');
-      expect(img).toHaveAttribute('src', 'https://example.com/thumbnail.jpg');
+      const video = container.querySelector('video');
+      expect(video).toBeInTheDocument();
+      expect(video).toHaveAttribute('src', 'https://example.com/video.mp4');
     });
 
-    it('should use videoUrl as fallback when thumbnailUrl is not provided', () => {
+    it('should use videoUrl when provided', () => {
       const shotWithVideo = {
         ...mockShot,
         videoUrl: 'https://example.com/video.mp4',
       };
 
-      render(<ShotCard {...defaultProps} shot={shotWithVideo} />);
+      const { container } = render(<ShotCard {...defaultProps} shot={shotWithVideo} />, { wrapper: createWrapper() });
 
-      const img = screen.getByAltText('Shot 1');
-      expect(img).toHaveAttribute('src', 'https://example.com/video.mp4');
+      const video = container.querySelector('video');
+      expect(video).toHaveAttribute('src', 'https://example.com/video.mp4');
     });
   });
 
   describe('Runway status display', () => {
-    it('should not show status indicator when runwayStatus is undefined', () => {
-      render(<ShotCard {...defaultProps} />);
+    it('should not show status badge when runwayStatus is undefined', () => {
+      const { container } = render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
-      expect(screen.queryByText(/PENDING|SUCCEEDED|FAILED/i)).not.toBeInTheDocument();
+      // No status badge should be rendered
+      const badges = container.querySelectorAll('.bg-green-500, .bg-red-500, .bg-yellow-500');
+      expect(badges.length).toBe(0);
     });
 
     it('should show green indicator for SUCCEEDED status', () => {
@@ -148,11 +173,10 @@ describe('ShotCard', () => {
         runwayStatus: 'SUCCEEDED' as const,
       };
 
-      render(<ShotCard {...defaultProps} shot={shotWithStatus} />);
+      const { container } = render(<ShotCard {...defaultProps} shot={shotWithStatus} />, { wrapper: createWrapper() });
 
-      expect(screen.getByText('SUCCEEDED')).toBeInTheDocument();
-      const indicator = screen.getByText('SUCCEEDED').previousSibling as HTMLElement;
-      expect(indicator).toHaveClass('bg-green-500');
+      const badge = container.querySelector('.bg-green-500');
+      expect(badge).toBeInTheDocument();
     });
 
     it('should show red indicator for FAILED status', () => {
@@ -161,11 +185,10 @@ describe('ShotCard', () => {
         runwayStatus: 'FAILED' as const,
       };
 
-      render(<ShotCard {...defaultProps} shot={shotWithStatus} />);
+      const { container } = render(<ShotCard {...defaultProps} shot={shotWithStatus} />, { wrapper: createWrapper() });
 
-      expect(screen.getByText('FAILED')).toBeInTheDocument();
-      const indicator = screen.getByText('FAILED').previousSibling as HTMLElement;
-      expect(indicator).toHaveClass('bg-red-500');
+      const badge = container.querySelector('.bg-red-500');
+      expect(badge).toBeInTheDocument();
     });
 
     it('should show yellow pulsing indicator for PENDING status', () => {
@@ -174,24 +197,25 @@ describe('ShotCard', () => {
         runwayStatus: 'PENDING' as const,
       };
 
-      render(<ShotCard {...defaultProps} shot={shotWithStatus} />);
+      const { container } = render(<ShotCard {...defaultProps} shot={shotWithStatus} />, { wrapper: createWrapper() });
 
-      expect(screen.getByText('PENDING')).toBeInTheDocument();
-      const indicator = screen.getByText('PENDING').previousSibling as HTMLElement;
-      expect(indicator).toHaveClass('bg-yellow-500');
-      expect(indicator).toHaveClass('animate-pulse');
+      const badge = container.querySelector('.bg-yellow-500');
+      expect(badge).toBeInTheDocument();
+      const loader = badge?.querySelector('svg');
+      expect(loader).toHaveClass('animate-spin');
     });
 
-    it('should capitalize status text', () => {
+    it('should show status indicator with icon', () => {
       const shotWithStatus = {
         ...mockShot,
         runwayStatus: 'SUCCEEDED' as const,
       };
 
-      render(<ShotCard {...defaultProps} shot={shotWithStatus} />);
+      const { container } = render(<ShotCard {...defaultProps} shot={shotWithStatus} />, { wrapper: createWrapper() });
 
-      const statusText = screen.getByText('SUCCEEDED');
-      expect(statusText).toHaveClass('capitalize');
+      const badge = container.querySelector('.bg-green-500');
+      const icon = badge?.querySelector('svg');
+      expect(icon).toBeInTheDocument();
     });
   });
 
@@ -200,17 +224,15 @@ describe('ShotCard', () => {
       const user = userEvent.setup();
       const onClick = vi.fn();
 
-      render(<ShotCard {...defaultProps} onClick={onClick} />);
+      const { container } = render(<ShotCard {...defaultProps} onClick={onClick} />, { wrapper: createWrapper() });
 
-      const card = screen.getByText('Shot 1').closest('div')?.parentElement;
-      if (card) {
-        await user.click(card);
-        expect(onClick).toHaveBeenCalledTimes(1);
-      }
+      const card = container.firstChild as HTMLElement;
+      await user.click(card);
+      expect(onClick).toHaveBeenCalledTimes(1);
     });
 
     it('should have cursor-pointer class for clickability', () => {
-      const { container } = render(<ShotCard {...defaultProps} />);
+      const { container } = render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('cursor-pointer');
@@ -222,7 +244,7 @@ describe('ShotCard', () => {
       const shotWithoutMood = { ...mockShot };
       delete (shotWithoutMood as any).mood;
 
-      render(<ShotCard {...defaultProps} shot={shotWithoutMood} />);
+      render(<ShotCard {...defaultProps} shot={shotWithoutMood} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('Shot 1')).toBeInTheDocument();
     });
@@ -231,7 +253,7 @@ describe('ShotCard', () => {
       const shotWithoutNotes = { ...mockShot };
       delete (shotWithoutNotes as any).notes;
 
-      render(<ShotCard {...defaultProps} shot={shotWithoutNotes} />);
+      render(<ShotCard {...defaultProps} shot={shotWithoutNotes} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('Shot 1')).toBeInTheDocument();
     });
@@ -247,10 +269,11 @@ describe('ShotCard', () => {
         thumbnailUrl: undefined,
       };
 
-      render(<ShotCard {...defaultProps} shot={minimalShot} />);
+      const { container } = render(<ShotCard {...defaultProps} shot={minimalShot} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('Shot 1')).toBeInTheDocument();
-      expect(screen.queryByText(/PENDING|SUCCEEDED|FAILED/i)).not.toBeInTheDocument();
+      const badges = container.querySelectorAll('.bg-green-500, .bg-red-500, .bg-yellow-500');
+      expect(badges.length).toBe(0);
     });
   });
 
@@ -258,7 +281,7 @@ describe('ShotCard', () => {
     it('should handle shot number 0', () => {
       const shotZero = { ...mockShot, number: 0 };
 
-      render(<ShotCard {...defaultProps} shot={shotZero} />);
+      render(<ShotCard {...defaultProps} shot={shotZero} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('0')).toBeInTheDocument();
       expect(screen.getByText('Shot 0')).toBeInTheDocument();
@@ -267,7 +290,7 @@ describe('ShotCard', () => {
     it('should handle very large shot numbers', () => {
       const largeShotNumber = { ...mockShot, number: 999 };
 
-      render(<ShotCard {...defaultProps} shot={largeShotNumber} />);
+      render(<ShotCard {...defaultProps} shot={largeShotNumber} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('999')).toBeInTheDocument();
       expect(screen.getByText('Shot 999')).toBeInTheDocument();
@@ -276,7 +299,7 @@ describe('ShotCard', () => {
     it('should handle duration of 0', () => {
       const zeroDuration = { ...mockShot, duration: 0 };
 
-      render(<ShotCard {...defaultProps} shot={zeroDuration} />);
+      render(<ShotCard {...defaultProps} shot={zeroDuration} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('0s')).toBeInTheDocument();
     });
@@ -284,7 +307,7 @@ describe('ShotCard', () => {
     it('should handle very long duration values', () => {
       const longDuration = { ...mockShot, duration: 3600 };
 
-      render(<ShotCard {...defaultProps} shot={longDuration} />);
+      render(<ShotCard {...defaultProps} shot={longDuration} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('3600s')).toBeInTheDocument();
     });
@@ -292,7 +315,7 @@ describe('ShotCard', () => {
     it('should handle empty description', () => {
       const emptyDesc = { ...mockShot, description: '' };
 
-      render(<ShotCard {...defaultProps} shot={emptyDesc} />);
+      render(<ShotCard {...defaultProps} shot={emptyDesc} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('Shot 1')).toBeInTheDocument();
     });
@@ -300,7 +323,7 @@ describe('ShotCard', () => {
     it('should handle empty cameraAngle', () => {
       const emptyAngle = { ...mockShot, cameraAngle: '' };
 
-      render(<ShotCard {...defaultProps} shot={emptyAngle} />);
+      render(<ShotCard {...defaultProps} shot={emptyAngle} />, { wrapper: createWrapper() });
 
       expect(screen.getByText('Shot 1')).toBeInTheDocument();
     });
@@ -308,7 +331,7 @@ describe('ShotCard', () => {
 
   describe('Styling', () => {
     it('should have proper background and rounded corners', () => {
-      const { container } = render(<ShotCard {...defaultProps} />);
+      const { container } = render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('bg-gray-800');
@@ -316,21 +339,21 @@ describe('ShotCard', () => {
     });
 
     it('should have proper padding', () => {
-      const { container } = render(<ShotCard {...defaultProps} />);
+      const { container } = render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('p-4');
     });
 
     it('should have transition-all for smooth animations', () => {
-      const { container } = render(<ShotCard {...defaultProps} />);
+      const { container } = render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('transition-all');
     });
 
     it('should have aspect-video for thumbnail', () => {
-      const { container } = render(<ShotCard {...defaultProps} />);
+      const { container } = render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       const thumbnail = container.querySelector('.aspect-video');
       expect(thumbnail).toBeInTheDocument();
@@ -338,21 +361,20 @@ describe('ShotCard', () => {
   });
 
   describe('Accessibility', () => {
-    it('should have proper alt text for video thumbnails', () => {
+    it('should render video element when video is available', () => {
       const shotWithVideo = {
         ...mockShot,
         videoUrl: 'https://example.com/video.mp4',
-        thumbnailUrl: 'https://example.com/thumbnail.jpg',
       };
 
-      render(<ShotCard {...defaultProps} shot={shotWithVideo} />);
+      const { container } = render(<ShotCard {...defaultProps} shot={shotWithVideo} />, { wrapper: createWrapper() });
 
-      const img = screen.getByAltText('Shot 1');
-      expect(img).toBeInTheDocument();
+      const video = container.querySelector('video');
+      expect(video).toBeInTheDocument();
     });
 
     it('should be keyboard accessible (clickable)', () => {
-      const { container } = render(<ShotCard {...defaultProps} />);
+      const { container } = render(<ShotCard {...defaultProps} />, { wrapper: createWrapper() });
 
       const card = container.firstChild as HTMLElement;
       expect(card).toHaveClass('cursor-pointer');

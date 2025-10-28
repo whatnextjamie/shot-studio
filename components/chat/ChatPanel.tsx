@@ -8,6 +8,7 @@ import TypingIndicator from './TypingIndicator';
 import { MessageSquare, Trash2 } from 'lucide-react';
 import { useStoryboardStore } from '@/store/storyboard-store';
 import { parseStoryboardFromMessage } from '@/lib/storyboard/parser';
+import { extractTextContent } from '@/lib/utils/message';
 
 export default function ChatPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -24,10 +25,7 @@ export default function ChatPanel() {
       // Parse storyboard from assistant message if present
       if (message.role === 'assistant') {
         // Extract text content from parts array
-        const content = message.parts
-          .filter((part) => part.type === 'text')
-          .map((part) => (part as any).text)
-          .join('');
+        const content = extractTextContent(message);
 
         // Parse the storyboard JSON from the content
         const storyboard = parseStoryboardFromMessage(content);
@@ -63,20 +61,21 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-950">
+    <div className="h-full flex flex-col bg-gray-950" role="region" aria-label="Storyboard Assistant Chat">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-900">
         <div className="flex items-center gap-2">
-          <MessageSquare className="text-gray-400" size={24} />
+          <MessageSquare className="text-gray-400" size={24} aria-hidden="true" />
           <h2 className="text-xl">Storyboard Assistant</h2>
         </div>
         {messages.length > 0 && (
           <button
             onClick={handleClearChat}
             className="text-gray-400 hover:text-red-400 transition-colors"
+            aria-label="Clear chat conversation"
             title="Clear chat"
           >
-            <Trash2 size={20} />
+            <Trash2 size={20} aria-hidden="true" />
           </button>
         )}
       </div>
@@ -99,10 +98,7 @@ export default function ChatPanel() {
           <div className="p-4 space-y-4">
             {messages.map((message) => {
               // Extract text content from parts array
-              const content = message.parts
-                .filter((part) => part.type === 'text')
-                .map((part) => (part as any).text)
-                .join('');
+              const content = extractTextContent(message);
 
               return (
                 <ChatMessage key={message.id} message={{

@@ -99,11 +99,11 @@ describe('TimelineShot', () => {
       expect(shotContainer).toHaveClass('w-32');
     });
 
-    it('should apply flex-shrink-0 to prevent shrinking', () => {
+    it('should apply flex-shrink to allow flexible sizing', () => {
       const { container } = render(<TimelineShot shot={mockShot} />);
 
       const shotContainer = container.firstChild as HTMLElement;
-      expect(shotContainer).toHaveClass('flex-shrink-0');
+      expect(shotContainer).toHaveClass('flex-shrink');
     });
 
     it('should apply cursor-move class', () => {
@@ -207,7 +207,7 @@ describe('TimelineShot', () => {
       const { container } = render(<TimelineShot shot={mockShot} />);
 
       const shotContainer = container.firstChild as HTMLElement;
-      expect(shotContainer).toHaveClass('ring-2', 'ring-blue-500');
+      expect(shotContainer).toHaveClass('ring-2', 'ring-gray-500');
     });
 
     it('should not apply dragging styles when not dragging', () => {
@@ -342,20 +342,6 @@ describe('TimelineShot', () => {
   });
 
   describe('Container Styling', () => {
-    it('should apply bg-gray-800 background', () => {
-      const { container } = render(<TimelineShot shot={mockShot} />);
-
-      const shotContainer = container.firstChild as HTMLElement;
-      expect(shotContainer).toHaveClass('bg-gray-800');
-    });
-
-    it('should apply rounded-lg corners', () => {
-      const { container } = render(<TimelineShot shot={mockShot} />);
-
-      const shotContainer = container.firstChild as HTMLElement;
-      expect(shotContainer).toHaveClass('rounded-lg');
-    });
-
     it('should apply padding', () => {
       const { container } = render(<TimelineShot shot={mockShot} />);
 

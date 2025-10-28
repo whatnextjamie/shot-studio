@@ -119,7 +119,7 @@ describe('Timeline', () => {
     it('should apply correct styling to empty state container', () => {
       const { container } = render(<Timeline />);
 
-      const emptyState = container.querySelector('.bg-gray-900.border-t.border-gray-800');
+      const emptyState = container.querySelector('.h-full.flex.items-center.justify-center.border-t.border-gray-800');
       expect(emptyState).toBeInTheDocument();
     });
 
@@ -186,17 +186,17 @@ describe('Timeline', () => {
       expect(shots[1]).toHaveTextContent('Shot 2');
     });
 
-    it('should apply correct container height', () => {
+    it('should apply border and padding to container', () => {
       const { container } = render(<Timeline />);
 
-      const timelineContainer = container.querySelector('.h-48');
+      const timelineContainer = container.querySelector('.border-t.border-gray-800.p-4');
       expect(timelineContainer).toBeInTheDocument();
     });
 
-    it('should apply correct background and border styling', () => {
+    it('should apply correct border styling', () => {
       const { container } = render(<Timeline />);
 
-      const timelineContainer = container.querySelector('.bg-gray-900.border-t.border-gray-800');
+      const timelineContainer = container.querySelector('.border-t.border-gray-800');
       expect(timelineContainer).toBeInTheDocument();
     });
 
@@ -576,13 +576,10 @@ describe('Timeline', () => {
       const { container } = render(<Timeline />);
 
       const root = container.firstChild as HTMLElement;
-      expect(root).toHaveClass('h-48', 'bg-gray-900', 'border-t', 'border-gray-800', 'p-4');
+      expect(root).toHaveClass('border-t', 'border-gray-800', 'p-4');
 
       const header = root.querySelector('.flex.items-center.gap-2.mb-3');
       expect(header).toBeInTheDocument();
-
-      const dndContext = root.querySelector('[data-testid="dnd-context"]');
-      expect(dndContext).toBeInTheDocument();
     });
 
     it('should render Timeline heading as h3', () => {

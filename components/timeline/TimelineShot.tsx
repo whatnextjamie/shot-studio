@@ -1,6 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, Film } from 'lucide-react';
+import Image from 'next/image';
 import type { Shot } from '@/types/storyboard';
 
 interface TimelineShotProps {
@@ -40,12 +41,15 @@ export default function TimelineShot({ shot }: TimelineShotProps) {
       </div>
 
       {/* Thumbnail */}
-      <div className="w-full aspect-video bg-gray-700 rounded flex items-center justify-center mb-2">
+      <div className="w-full aspect-video bg-gray-700 rounded flex items-center justify-center mb-2 overflow-hidden relative">
         {shot.videoUrl ? (
-          <img
+          <Image
             src={shot.thumbnailUrl || shot.videoUrl}
             alt={`Shot ${shot.number}`}
-            className="w-full h-full object-cover rounded"
+            fill
+            sizes="128px"
+            className="object-cover"
+            loading="lazy"
           />
         ) : (
           <Film size={20} className="text-gray-600" />
