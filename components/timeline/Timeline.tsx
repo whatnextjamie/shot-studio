@@ -1,7 +1,7 @@
 'use client';
 
-import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
-import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, DragEndEvent, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, horizontalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { useStoryboardStore } from '@/store/storyboard-store';
 import { updateTiming } from '@/lib/storyboard/parser';
 import TimelineShot from './TimelineShot';
@@ -10,6 +10,14 @@ import { Clock } from 'lucide-react';
 export default function Timeline() {
   const storyboard = useStoryboardStore((state) => state.storyboard);
   const reorderShots = useStoryboardStore((state) => state.reorderShots);
+
+  // Configure sensors for both pointer and keyboard interactions
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   if (!storyboard) {
     return (
@@ -46,7 +54,11 @@ export default function Timeline() {
         </span>
       </div>
 
-      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
         <SortableContext
           items={storyboard.shots.map((s) => s.id)}
           strategy={horizontalListSortingStrategy}

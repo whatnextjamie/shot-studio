@@ -4,7 +4,7 @@
 
 export interface RunwayGenerateRequest {
   prompt: string; // Required, max 1000 UTF-16 code points
-  duration?: 5 | 10; // Duration in seconds, default 5
+  duration?: 4 | 6 | 8; // Duration in seconds for Veo 3.1, default 6
   ratio?: '16:9' | '9:16' | '4:3' | '3:4' | '1:1' | '21:9';
   watermark?: boolean;
   image_url?: string; // HTTPS URL or data URI for first frame (image-to-video)
