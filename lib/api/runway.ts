@@ -40,26 +40,42 @@ export class RunwayClient {
   }
 
   async generate(params: RunwayGenerateRequest): Promise<RunwayGenerateResponse> {
-    // Map aspect ratio to Runway's text-to-video pixel format
-    // Text-to-video only supports: 1280:720, 720:1280, 1080:1920, 1920:1080
+    // Map to Runway's pixel dimension format for veo3.1
+    // veo3.1 supports: 1280:720, 720:1280, and other standard ratios
     const ratioMap: Record<string, string> = {
-      '16:9': '1920:1080',   // Widescreen
-      '9:16': '1080:1920',   // Vertical
-      '4:3': '1280:720',     // Closest match
-      '3:4': '720:1280',     // Closest match
-      '1:1': '1280:720',     // Closest match (no square option)
-      '21:9': '1920:1080',   // Closest match (no ultrawide)
+      '16:9': '1280:720',
+      '9:16': '720:1280',
+      '4:3': '1280:720',    // Closest match
+      '3:4': '720:1280',    // Closest match
+      '1:1': '1280:720',    // Closest match
+      '21:9': '1280:720',   // Closest match
+      // Pass through if already in pixel format
+      '1280:720': '1280:720',
+      '720:1280': '720:1280',
+      '1920:1080': '1920:1080',
+      '1080:1920': '1080:1920',
     };
 
-    const ratio = params.ratio ? (ratioMap[params.ratio] || '1920:1080') : '1920:1080';
+    const ratio = params.ratio ? (ratioMap[params.ratio] || '1280:720') : '1280:720';
+
+    const requestBody: any = {
+      model: 'veo3.1',
+      promptText: params.prompt,
+      duration: params.duration || 6,  // Default to 6s (valid values: 4, 6, 8)
+      ratio: ratio,
+    };
+
+    // Add optional parameters if provided
+    if (params.seed !== undefined) {
+      requestBody.seed = params.seed;
+    }
+    if (params.watermark !== undefined) {
+      requestBody.watermark = params.watermark;
+    }
 
     const response = await this.request('/text_to_video', {
       method: 'POST',
-      body: JSON.stringify({
-        model: 'veo3.1_fast', // Fast text-to-video model
-        promptText: params.prompt,
-        seed: params.seed,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     return response.json();

@@ -1,7 +1,14 @@
 import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { User, Bot } from 'lucide-react';
-import type { Message } from '@/types/storyboard';
+
+// AI SDK Message type
+interface Message {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  createdAt?: Date;
+}
 
 interface ChatMessageProps {
   message: Message;
@@ -11,11 +18,8 @@ export const ChatMessage = memo(function ChatMessage({ message }: ChatMessagePro
   const isUser = message.role === 'user';
 
   // Remove JSON code blocks from assistant messages
-  // Handle both complete blocks (with closing ```) and incomplete blocks (during streaming)
   const displayContent = message.role === 'assistant'
-    ? message.content
-        .replace(/```json[\s\S]*?```/g, '')  // Remove complete JSON blocks
-        .replace(/```json[\s\S]*$/g, '')      // Remove incomplete JSON blocks (streaming)
+    ? message.content.replace(/```json[\s\S]*?```/g, '')
     : message.content;
 
   // Check if message has storyboard JSON

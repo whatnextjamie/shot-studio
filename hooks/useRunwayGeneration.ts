@@ -30,9 +30,17 @@ export function useRunwayGeneration(shotId: string) {
   // Mutation for starting generation
   const startGeneration = useMutation({
     mutationFn: async (prompt: string) => {
-      // Runway only accepts 5 or 10 second durations
-      // Use 5s if shot duration <= 7s, otherwise use 10s
-      const duration = (shot?.duration || 5) <= 7 ? 5 : 10;
+      // Veo 3.1 only accepts 4, 6, or 8 second durations
+      // Map shot duration to nearest valid value
+      const shotDuration = shot?.duration || 6;
+      let duration: 4 | 6 | 8;
+      if (shotDuration <= 5) {
+        duration = 4;
+      } else if (shotDuration <= 7) {
+        duration = 6;
+      } else {
+        duration = 8;
+      }
 
       const response = await fetch('/api/runway/generate', {
         method: 'POST',
@@ -40,7 +48,7 @@ export function useRunwayGeneration(shotId: string) {
         body: JSON.stringify({
           prompt,
           duration,
-          ratio: '16:9',
+          ratio: '1280:720', // Runway requires pixel dimensions, not aspect ratio
         }),
       });
 
@@ -111,10 +119,6 @@ export function useRunwayGeneration(shotId: string) {
 
     if (data.status === 'SUCCEEDED') {
       const videoUrl = data.videoUrl;
-      console.log('✅ Video generated successfully:', {
-        videoUrl,
-        hasVideoUrl: !!videoUrl,
-      });
 
       updateShot(shotId, {
         runwayStatus: 'SUCCEEDED',
@@ -127,8 +131,6 @@ export function useRunwayGeneration(shotId: string) {
         queryKey: ['runway-status', shot.runwayTaskId],
       });
     } else if (data.status === 'FAILED' || data.status === 'CANCELLED') {
-      console.log('❌ Generation failed:', data.error);
-
       updateShot(shotId, {
         runwayStatus: 'FAILED',
       });
