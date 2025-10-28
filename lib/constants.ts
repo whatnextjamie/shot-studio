@@ -10,7 +10,7 @@ export const RUNWAY_CONFIG = {
   POLLING_INTERVAL_MS: 3000,
 
   /** Default video duration in seconds */
-  DEFAULT_DURATION_SECONDS: 6,
+  DEFAULT_DURATION_SECONDS: 4,
 
   /** Valid duration values for Runway video generation */
   VALID_DURATIONS: [4, 6, 8] as const,

@@ -144,7 +144,7 @@ export class RunwayClient {
     const ratio = params.ratio ? (ratioMap[params.ratio] || RUNWAY_CONFIG.DEFAULT_RATIO) : RUNWAY_CONFIG.DEFAULT_RATIO;
 
     const requestBody: RunwayTextToVideoRequest = {
-      model: 'veo3.1',
+      model: 'veo3.1_fast',
       promptText: params.prompt,
       duration: params.duration || RUNWAY_CONFIG.DEFAULT_DURATION_SECONDS,
       ratio: ratio,

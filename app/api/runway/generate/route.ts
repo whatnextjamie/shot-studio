@@ -60,6 +60,11 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Runway generation error:', error);
 
+    // Log detailed error information for debugging
+    if (error && typeof error === 'object' && 'responseBody' in error) {
+      console.error('Runway API response body:', error.responseBody);
+    }
+
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Generation failed' },
       { status: 500 }
